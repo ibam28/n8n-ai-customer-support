@@ -1,0 +1,11 @@
+# Environment
+.env
+
+# Logs
+*.log
+
+# Linux temporary files
+*~
+
+# macOS
+.DS_Store

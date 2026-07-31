@@ -1,0 +1,13 @@
+services:
+  n8n:
+    image: n8nio/n8n:2.31.7
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      TZ: ${TZ}
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:
