@@ -1,71 +1,135 @@
-# System Architecture
+# AI Customer Support Architecture
 
 ## Overview
 
-n8n AI Customer Support is an automation system that receives customer messages through a webhook, processes them with a local AI model using Ollama, stores conversation history in MySQL, and returns an AI-generated response.
+AI Customer Support is a self-hosted automation platform built with Docker, n8n, MySQL, Ollama, and PHP.
 
-The project is designed to be lightweight, self-hosted, and easy to extend to other communication channels such as websites, WhatsApp, Telegram, or Discord.
+The system receives customer messages, stores conversation history, processes requests using a local Large Language Model (LLM), and returns AI-generated responses.
 
----
-
-# Objectives
-
-- Automate customer support responses.
-- Run entirely on a local server.
-- Avoid external AI API costs.
-- Store conversation history.
-- Provide a clean and scalable workflow.
+The architecture is designed to be modular, scalable, and independent from external AI providers.
 
 ---
 
-# Components
+# Design Principles
+
+- Self-hosted first
+- Local AI by default
+- Docker-based deployment
+- Database normalization
+- Modular workflow design
+- Multi-channel ready
+- Easy to extend
+
+---
+
+# System Components
+
+## PHP
+
+Responsibilities
+
+- Customer web interface
+- Send requests to n8n
+- Display AI responses
+
+---
 
 ## n8n
 
-Responsibilities:
+Responsibilities
 
-- Receive webhook requests.
-- Validate incoming data.
-- Send prompts to Ollama.
-- Save conversations to MySQL.
-- Return JSON responses.
-
----
-
-## Ollama
-
-Responsibilities:
-
-- Run the local Large Language Model.
-- Generate AI responses.
-- Process prompts from n8n.
+- Receive webhook requests
+- Execute automation workflows
+- Connect MySQL and Ollama
+- Return JSON responses
 
 ---
 
 ## MySQL
 
-Stores:
+Responsibilities
 
-- Session ID
-- Customer message
-- AI response
-- Timestamp
-
----
-
-## Docker
-
-Responsibilities:
-
-- Run every service in isolated containers.
-- Simplify deployment.
-- Ensure consistent environments.
+- Store customer data
+- Store conversations
+- Store messages
+- Store AI logs
 
 ---
 
-# Data Flow
+## Ollama
 
-Client
+Responsibilities
+
+- Run local LLM
+- Generate AI responses
+- Process prompts
+
+---
+
+# Project Structure
+
+```
+n8n-ai-customer-support/
+
+├── assets/
+├── database/
+│   └── init.sql
+├── docs/
+│   └── architecture.md
+├── php/
+├── workflows/
+├── docker-compose.yml
+├── .env
+├── README.md
+└── LICENSE
+```
+
+---
+
+# Database Architecture
+
+```
+customers
+    │
+    │ 1:N
+    ▼
+conversations
+    │
+    │ 1:N
+    ▼
+messages
+    │
+    │ 1:1
+    ▼
+ai_logs
+```
+
+## customers
+
+Stores customer profile information.
+
+## conversations
+
+Stores customer chat sessions.
+
+## messages
+
+Stores every message from customer and AI.
+
+## ai_logs
+
+Stores AI processing information including model, prompt, response, latency, and errors.
+
+---
+
+# Request Flow
+
+```
+Customer
+
+↓
+
+Website (PHP)
 
 ↓
 
@@ -73,39 +137,96 @@ n8n Webhook
 
 ↓
 
+Find Customer
+
+↓
+
+Create Conversation
+
+↓
+
+Store User Message
+
+↓
+
 Ollama
 
 ↓
 
-MySQL
+Store AI Log
 
 ↓
 
-JSON Response
+Store Assistant Message
+
+↓
+
+Return Response
+
+↓
+
+Customer
+```
 
 ---
 
-# Future Integrations
+# Data Flow
 
-The architecture is designed to support:
-
-- Website Chat Widget
-- WhatsApp
-- Telegram
-- Discord
-- Email Automation
-- CRM Systems
-
-without major workflow changes.
+```
+Customer Message
+        │
+        ▼
+      n8n
+        │
+        ├──────────────► MySQL
+        │
+        └──────────────► Ollama
+                              │
+                              ▼
+                        AI Response
+                              │
+                              ▼
+                           MySQL
+                              │
+                              ▼
+                         JSON Response
+```
 
 ---
 
-# Project Status
+# Current Project Status
 
-Current Version:
+Current Version
 
-MVP (Minimum Viable Product)
+MVP v1.0
 
-Current Phase:
+Completed
 
-Architecture & Infrastructure Design
+- Docker Environment
+- MySQL
+- Database Schema
+- Customer Model
+- Conversation Model
+- Message Model
+- AI Log Model
+
+In Progress
+
+- Adminer
+- n8n Workflow
+- Ollama Integration
+
+Planned
+
+- WhatsApp Integration
+- Telegram Integration
+- Discord Integration
+- Knowledge Base (RAG)
+- Human Agent Handover
+- CRM Integration
+
+---
+
+# Future Goals
+
+The project aims to become a production-ready AI Customer Support platform capable of serving multiple communication channels using a single workflow architecture.
