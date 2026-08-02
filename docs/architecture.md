@@ -1,232 +1,206 @@
-# AI Customer Support Architecture
+# System Architecture
 
 ## Overview
 
-AI Customer Support is a self-hosted automation platform built with Docker, n8n, MySQL, Ollama, and PHP.
+The AI Customer Support Platform is a self-hosted automation solution designed to demonstrate how modern customer support systems can be built using workflow automation, relational databases, local large language models (LLMs), and containerized infrastructure.
 
-The system receives customer messages, stores conversation history, processes requests using a local Large Language Model (LLM), and returns AI-generated responses.
-
-The architecture is designed to be modular, scalable, and independent from external AI providers.
+The platform follows a modular architecture that separates business logic, workflow automation, database operations, and AI processing into independent components. This design makes the system easier to maintain, scale, and extend.
 
 ---
 
-# Design Principles
+## High-Level Architecture
 
-- Self-hosted first
-- Local AI by default
-- Docker-based deployment
-- Database normalization
-- Modular workflow design
-- Multi-channel ready
-- Easy to extend
+```mermaid
+flowchart LR
+
+Client["Client / API Consumer"] -->|HTTP Request| PHP["PHP Backend"]
+
+PHP -->|Webhook Request| N8N["n8n Workflow Engine"]
+
+N8N -->|Read / Write| MYSQL["MySQL Database"]
+MYSQL -->|Conversation History| N8N
+
+N8N -->|Prompt| OLLAMA["Ollama"]
+
+OLLAMA -->|AI Response| N8N
+
+N8N -->|JSON Response| PHP
+
+PHP -->|HTTP Response| Client
+```
 
 ---
 
-# System Components
+## Request Flow
 
-## PHP
+```mermaid
+flowchart TD
 
-Responsibilities
+A["Customer Request"] --> B["PHP Backend"]
 
-- Customer web interface
-- Send requests to n8n
-- Display AI responses
+B --> C["n8n Webhook"]
+
+C --> D["Validate Request"]
+
+D --> E["Find Customer"]
+
+E --> F["Find Conversation"]
+
+F --> G["Load Conversation History"]
+
+G --> H["Generate Prompt"]
+
+H --> I["Ollama"]
+
+I --> J["Generate AI Response"]
+
+J --> K["Store Conversation"]
+
+K --> L["Return JSON Response"]
+```
 
 ---
 
-## n8n
+## Technology Stack
 
-Responsibilities
+| Layer | Technology |
+|--------|------------|
+| Backend | PHP |
+| Workflow Automation | n8n |
+| Database | MySQL |
+| AI Runtime | Ollama |
+| Language Model | Qwen2.5:3B |
+| Deployment | Docker |
+| API | REST Webhook |
 
-- Receive webhook requests
-- Execute automation workflows
-- Connect MySQL and Ollama
+---
+
+## Core Components
+
+### PHP Backend
+
+**Responsibilities**
+
+- Receive client requests
+- Validate input
+- Forward requests to n8n
 - Return JSON responses
 
 ---
 
-## MySQL
+### n8n Workflow Engine
 
-Responsibilities
+**Responsibilities**
 
-- Store customer data
+- Execute workflow automation
+- Coordinate business logic
+- Connect MySQL with Ollama
+- Manage conversation flow
+
+---
+
+### MySQL Database
+
+**Responsibilities**
+
+- Store customer records
 - Store conversations
-- Store messages
+- Store chat messages
 - Store AI logs
 
 ---
 
-## Ollama
+### Ollama
 
-Responsibilities
+**Responsibilities**
 
-- Run local LLM
+- Execute local language models
 - Generate AI responses
-- Process prompts
+- Process prompts locally
 
 ---
 
-# Project Structure
+## Database Relationships
 
+```mermaid
+erDiagram
+
+CUSTOMERS ||--o{ CONVERSATIONS : owns
+
+CONVERSATIONS ||--o{ MESSAGES : contains
+
+MESSAGES ||--o| AI_LOGS : generates
 ```
-n8n-ai-customer-support/
 
+---
+
+## Repository Structure
+
+```text
+n8n-ai-customer-support/
+│
 ├── assets/
 ├── database/
-│   └── init.sql
 ├── docs/
-│   └── architecture.md
+│   ├── architecture.md
+│   ├── api.md
+│   └── setup.md
 ├── php/
-├── workflows/
+├── sql/
+├── workflow/
+│   └── customer-support.json
 ├── docker-compose.yml
-├── .env
 ├── README.md
 └── LICENSE
 ```
 
 ---
 
-# Database Architecture
+## Design Principles
 
-```
-customers
-    │
-    │ 1:N
-    ▼
-conversations
-    │
-    │ 1:N
-    ▼
-messages
-    │
-    │ 1:1
-    ▼
-ai_logs
-```
-
-## customers
-
-Stores customer profile information.
-
-## conversations
-
-Stores customer chat sessions.
-
-## messages
-
-Stores every message from customer and AI.
-
-## ai_logs
-
-Stores AI processing information including model, prompt, response, latency, and errors.
+- Self-hosted by default
+- Local AI first
+- Docker-first deployment
+- Modular architecture
+- Stateless API design
+- Extensible workflows
+- Production-oriented structure
 
 ---
 
-# Request Flow
+## Roadmap
 
-```
-Customer
+### ✅ Completed
 
-↓
+- [x] Docker environment
+- [x] MySQL integration
+- [x] Customer database
+- [x] Conversation history
+- [x] Ollama integration
+- [x] REST webhook
+- [x] Local AI inference
 
-Website (PHP)
+### 🚧 In Progress
 
-↓
+- [ ] Admin dashboard
+- [ ] API documentation
+- [ ] Workflow optimization
 
-n8n Webhook
+### 📋 Planned
 
-↓
-
-Find Customer
-
-↓
-
-Create Conversation
-
-↓
-
-Store User Message
-
-↓
-
-Ollama
-
-↓
-
-Store AI Log
-
-↓
-
-Store Assistant Message
-
-↓
-
-Return Response
-
-↓
-
-Customer
-```
+- [ ] WhatsApp integration
+- [ ] Telegram integration
+- [ ] Discord integration
+- [ ] Knowledge Base (RAG)
+- [ ] Human handover
+- [ ] Multi-agent support
 
 ---
 
-# Data Flow
+## Author
 
-```
-Customer Message
-        │
-        ▼
-      n8n
-        │
-        ├──────────────► MySQL
-        │
-        └──────────────► Ollama
-                              │
-                              ▼
-                        AI Response
-                              │
-                              ▼
-                           MySQL
-                              │
-                              ▼
-                         JSON Response
-```
+**Bam**
 
----
+AI Automation Engineer Portfolio Project
 
-# Current Project Status
-
-Current Version
-
-MVP v1.0
-
-Completed
-
-- Docker Environment
-- MySQL
-- Database Schema
-- Customer Model
-- Conversation Model
-- Message Model
-- AI Log Model
-
-In Progress
-
-- Adminer
-- n8n Workflow
-- Ollama Integration
-
-Planned
-
-- WhatsApp Integration
-- Telegram Integration
-- Discord Integration
-- Knowledge Base (RAG)
-- Human Agent Handover
-- CRM Integration
-
----
-
-# Future Goals
-
-The project aims to become a production-ready AI Customer Support platform capable of serving multiple communication channels using a single workflow architecture.
+GitHub: https://github.com/ibam28

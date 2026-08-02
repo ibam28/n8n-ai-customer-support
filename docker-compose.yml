@@ -1,7 +1,9 @@
 services:
   n8n:
-    image: n8nio/n8n:2.31.7
+    image: n8nio/n8n:latest
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "5678:5678"
     environment:

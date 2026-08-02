@@ -1,0 +1,608 @@
+{
+  "name": "01 - MySQL Connection",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "customer-support",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        -64
+      ],
+      "id": "7e7a9743-2652-4d5d-807e-d1724b8a1f74",
+      "name": "Receive Request",
+      "webhookId": "a4771e5e-b763-45f4-b425-4cecc69af309"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"name\": \"{{$json.body.name}}\",\n  \"email\": \"{{$json.body.email}}\",\n  \"phone\": \"{{$json.body.phone}}\",\n  \"message\": \"{{$json.body.message}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        -272
+      ],
+      "id": "cea69c9a-5a26-417e-a61a-2363d6914cf8",
+      "name": "Normalize Input"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM customers\nWHERE email = '{{ $json.email }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        576,
+        -272
+      ],
+      "id": "2780488c-9c64-4383-9e75-7abf52cb4b4c",
+      "name": "Find Customer",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "woiy2N1EWhkze4AJ",
+          "name": "MySQL - AI Customer Support"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9b2c58b5-67d4-4e7c-9edd-02722012c25b",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        736,
+        -272
+      ],
+      "id": "f6ace7f1-485d-43c1-a430-07e384244956",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO customers\n(\n    name,\n    email,\n    phone,\n    status\n)\nVALUES\n(\n    '{{ $(\"Normalize Input\").first().json.name }}',\n    '{{ $(\"Normalize Input\").first().json.email }}',\n    '{{ $(\"Normalize Input\").first().json.phone }}',\n    'active'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        736,
+        -112
+      ],
+      "id": "84d5e998-df32-4b84-bf3a-581dd0177980",
+      "name": "Create Customer",
+      "credentials": {
+        "mySql": {
+          "id": "woiy2N1EWhkze4AJ",
+          "name": "MySQL - AI Customer Support"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    id,\n    name,\n    email,\n    phone,\n    status\nFROM customers\nWHERE email='{{ $(\"Normalize Input\").first().json.email }}'\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        896,
+        -112
+      ],
+      "id": "18c84af4-0179-438c-9143-9c1dd798b1da",
+      "name": "Find Customer Again",
+      "credentials": {
+        "mySql": {
+          "id": "woiy2N1EWhkze4AJ",
+          "name": "MySQL - AI Customer Support"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1008,
+        -272
+      ],
+      "id": "c397e81d-5843-46cd-a465-c823bb6b63dc",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM conversations\nWHERE customer_id = {{ $json.id }}\n  AND channel = 'web'\n  AND status = 'open'\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1168,
+        -272
+      ],
+      "id": "c6469c5f-48b3-4ab8-9a0a-4652e8d7bbf0",
+      "name": "Find Conversation",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "woiy2N1EWhkze4AJ",
+          "name": "MySQL - AI Customer Support"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9eab2b5f-a5e8-41fe-b47a-ed80eff3b046",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1312,
+        -272
+      ],
+      "id": "4325a4da-b5cd-4557-8fd9-3eabbcd9b65c",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO conversations\n(\ncustomer_id,\nchannel,\nexternal_id,\nstatus\n)\nVALUES\n(\n{{ $('Merge').item.json.id }},\n'web',\n{{ $('Merge').item.json.phone }},\n'open'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1344,
+        -112
+      ],
+      "id": "eae0e538-4ca3-4bc4-ac4c-46180860492c",
+      "name": "Create Conversation",
+      "credentials": {
+        "mySql": {
+          "id": "woiy2N1EWhkze4AJ",
+          "name": "MySQL - AI Customer Support"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM conversations\nWHERE customer_id = {{ $('Merge').item.json.id }}\nAND channel = 'web'\nAND status = 'open'\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1520,
+        -112
+      ],
+      "id": "f7e57a5c-557a-44c9-94ee-06d0a0574353",
+      "name": "Find Conversation Again",
+      "credentials": {
+        "mySql": {
+          "id": "woiy2N1EWhkze4AJ",
+          "name": "MySQL - AI Customer Support"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1632,
+        -272
+      ],
+      "id": "f7f73888-078c-4a9e-a925-f326e0d5d282",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages\n(\n    conversation_id,\n    role,\n    message_type,\n    message\n)\nVALUES\n(\n    {{ $('Merge1').item.json.id }},\n    'user',\n    'text',\n    '{{ $('Normalize Input').item.json.message }}'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1792,
+        -272
+      ],
+      "id": "ec533d7b-3372-42c1-b44a-2329d49e5e39",
+      "name": "Save User Message",
+      "credentials": {
+        "mySql": {
+          "id": "woiy2N1EWhkze4AJ",
+          "name": "MySQL - AI Customer Support"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    role,\n    message\nFROM messages\nWHERE conversation_id = {{ $('Merge1').item.json.id }}\nORDER BY created_at ASC\nLIMIT 20;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1968,
+        -272
+      ],
+      "id": "dacdedfd-9279-4284-8dfa-d4ce6112e2d8",
+      "name": "Load Conversation History",
+      "credentials": {
+        "mySql": {
+          "id": "woiy2N1EWhkze4AJ",
+          "name": "MySQL - AI Customer Support"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "qwen2.5:3b"
+            },
+            {
+              "name": "messages",
+              "value": "={{$json.messages}}"
+            },
+            {
+              "name": "stream",
+              "value": "={{ Boolean(false) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2160,
+        -112
+      ],
+      "id": "62bce79c-749f-4f48-8c35-7fcc310dcf16",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"reply\": \"{{$json.message.content}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2576,
+        -112
+      ],
+      "id": "22d3cd1e-fbd2-4865-ae0c-d6aeab30348b",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (\n    conversation_id,\n    role,\n    message\n)\nVALUES (\n    {{ $('Merge1').item.json.id }},\n    'assistant',\n    '{{ $json.message.content }}'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        2368,
+        -112
+      ],
+      "id": "21879e30-6cea-4229-a02b-fc54a7d4cd00",
+      "name": "Save Assistant Message",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "woiy2N1EWhkze4AJ",
+          "name": "MySQL - AI Customer Support"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const history = $input.all().map(item => ({\n  role: item.json.role,\n  content: item.json.message,\n}));\n\nhistory.unshift({\n  role: \"system\",\n  content: \"Kamu adalah customer support yang selalu menjawab dalam Bahasa Indonesia dengan singkat, jelas, dan ramah.\"\n});\n\nreturn [\n  {\n    json: {\n      messages: history\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2176,
+        -272
+      ],
+      "id": "31c2e93c-fe91-4e0c-a916-a2fadd77bc37",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Request": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Find Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Customer": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Customer": {
+      "main": [
+        [
+          {
+            "node": "Find Customer Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Customer Again": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Find Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Conversation": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Conversation": {
+      "main": [
+        [
+          {
+            "node": "Find Conversation Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Conversation Again": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Save User Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save User Message": {
+      "main": [
+        [
+          {
+            "node": "Load Conversation History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Conversation History": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Save Assistant Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Assistant Message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f3eb0818-f1b8-4bde-b673-31912742126e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e64496b82fd4151ad602f302505edf0e5d4b9cf4dbd34439da761c232b97a4bc"
+  },
+  "nodeGroups": [],
+  "id": "tAVSFsvWYjLVFkU9",
+  "tags": []
+}
